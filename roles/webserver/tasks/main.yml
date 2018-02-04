@@ -1,0 +1,59 @@
+---
+
+- name: "Instalation of required package"
+  apt: pkg={{ item }} state=installed
+  with_items:
+  - nginx
+  - php7.0-fpm
+  - openssl
+
+- name: "create app and certs directory"
+  file:
+   path: "{{ item }}"
+   state: directory
+   owner: www-data
+   group: www-data
+   mode: 0775
+  with_items:
+    - /etc/certs
+    - /app 
+  
+- name: "register certs file"
+  stat: path=/etc/certs/nginx.crt
+  register: certs
+
+- name: "genetate certificates localy"
+  raw: openssl req -x509 -nodes -days 365eq -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/certs/nginx.key -out /etc/certs/nginx.crt -subj "/C=BG/ST=Denial/L=Sofia/O=Dis/CN=ans4"
+  when: not certs.stat.exists
+  notify:
+  - restart nginx
+
+- name: "copy config for nginx"
+  copy: src=../files/nginx.conf dest=/etc/nginx/nginx.conf owner=root group=root mode=644
+  copy: src=../files/site.conf dest=/etc/nginx/sites-available/ans4.conf owner=root group=root mode=644
+  notify:
+  - restart nginx
+
+- name: "remove default config"
+  file:
+    path: /etc/nginx/sites-available/default
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify:
+  - restart nginx
+
+- name: "enable site.conf"
+  file: src=/etc/nginx/sites-available/ans4.conf dest=/etc/nginx/sites-enabled/ans4.conf state=link
+  notify:
+  - restart nginx
+
+- name: "copy php-fpm config for IP:9000 pool"
+  copy: src=../files/www.conf dest=/etc/php/7.0/fpm/pool.d/www.conf owner=www-data group=www-data mode=644
+  notify:
+  - restart php
+
+- name: "put a index.php test file"
+  copy: src=../files/index.php dest=/app/index.php owner=www-data group=www-data mode=755
+  args:
+   force: no
+

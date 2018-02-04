@@ -1,0 +1,10 @@
+---
+- hosts: all
+  become: true
+  roles:
+  - basic
+  - webserver
+  - mysql
+  vars:
+   MySQL_root_pass: 123123
+

@@ -1,0 +1,15 @@
+- name: "install aditional software"
+  apt: pkg={{ item }} state=installed
+  with_items:
+  - dnsutils
+  - git
+  - mc
+  - vim
+  - ntp
+  - at
+  - lvm2 
+  - coreutils
+  - nginx
+  - php7.0-fpm
+  - python-pycurl
+  - libcurl4-openssl-dev
